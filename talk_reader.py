@@ -32,6 +32,17 @@ class Section(object):
         return s
 
 
+    def get_sec_all(self, operator):
+        ret = []
+        if self.op == operator:
+            ret.append(self)
+
+        for sec in self.sec_list:
+            ret.extend(sec.get_sec_all(operator))
+
+        return ret
+
+
     def is_sentence(self):
         return len(self.sec_list) > 0
 
