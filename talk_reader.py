@@ -350,6 +350,7 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
         #for sec in sections:
         #    sentences.extend(sec.sen_list)
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='BECAUSE', \
                         sec_list=sections.copy(), parent=par, index=idx)
         ret_sec.sec_list[0].parent = ret_sec
@@ -361,6 +362,7 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
         nobl = split_blancket(w[1])
         tmp = make_section_from_text(pd, pt, a_num, nobl[0], ret_sec, 0)
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=day, \
+                        sub_id=a_num, \
                         op='DAY', \
                         sec_list=[tmp], parent=par, index=idx)
         ret_sec.sec_list[0].parent = ret_sec
@@ -372,6 +374,7 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
         tmp = split_blancket(rest)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='NOT', \
                         sec_list=sections.copy(), parent=par, index=idx)
         ret_sec.sec_list[0].parent = ret_sec
@@ -381,6 +384,7 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
         # print(tmp)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='AND', \
                         sec_list=sections.copy(), parent=par, index=idx)
         for sec in ret_sec.sec_list:
@@ -390,6 +394,7 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
         tmp = split_blancket(rest)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='OR', \
                         sec_list=sections.copy(), parent=par, index=idx)
         for sec in ret_sec.sec_list:
@@ -399,6 +404,7 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
         tmp = split_blancket(rest)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='XOR', \
                         sec_list=sections.copy(), parent=par, index=idx)
         for sec in ret_sec.sec_list:

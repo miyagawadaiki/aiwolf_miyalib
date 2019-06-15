@@ -128,12 +128,12 @@ sec = make_section_from_text(2,1,1,text)
 vote = [s for s in sec.get_sec_all(op='VOTE') if s.get_parent('REQUEST') == None]
 ```
 
-#### 'BECAUSE'の第1文に連なるSectionかどうかを判定. 
+#### BECAUSE文の第1節に連なるSectionかどうかを判定. 
 ```python
 text = 'BECAUSE (Agent[03] DIVINED Agent[02] WEREWOLF) (AND (Agent[01] VOTE Agent[02]) (REQUEST ANY (VOTE Agent[02])))'
 sec = make_section_from_text(2,1,1,text)
-voted = sec.get_sec_all(op='DIVINED')
-if voted.get_arg_num('BECAUSE') == 0:
+divined = sec.get_sec_all(op='DIVINED')
+if divined.get_arg_num('BECAUSE') == 0:
 	# BECAUSEの第1文なので新規情報ではない
 ```
 
