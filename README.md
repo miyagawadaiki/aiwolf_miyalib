@@ -24,12 +24,12 @@ sentenceはoperator（AND, ORなど）を使うと, 一つの文中に複数含�
 * Section化前 :  
 "BECAUSE (Agent[02] VOTED Agent[01]) (AND (Agent[01] VOTE Agent[02]) (REQUEST ANY (VOTE Agent[02])))"
 * Section化後 :  
-Agent[00] BECAUSE agent\[00\] () at Day[00] on Turn[00]
-    Agent[02] VOTED agent[01] () at Day[00] on Turn[00]
-    Agent[00] AND agent[00] () at Day[00] on Turn[00]
-        Agent[01] VOTE agent[02] () at Day[00] on Turn[00]
-        Agent[00] REQUEST agent[-1] () at Day[00] on Turn[00]
-            Agent[-1] VOTE agent[02] () at Day[00] on Turn[00]
+Agent[00] BECAUSE agent\[00\] () at Day[00] on Turn[00]  
+　　Agent[02] VOTED agent[01] () at Day[00] on Turn[00]  
+　　Agent[00] AND agent[00] () at Day[00] on Turn[00]  
+　　　　Agent[01] VOTE agent[02] () at Day[00] on Turn[00]  
+　　　　Agent[00] REQUEST agent[-1] () at Day[00] on Turn[00]  
+　　　　　　Agent[-1] VOTE agent[02] () at Day[00] on Turn[00]  
 
 <br><br>
 #### 仕様
@@ -87,6 +87,7 @@ Agent[00] BECAUSE agent\[00\] () at Day[00] on Turn[00]
 
 
 <br>
+
 ### Sectionクラスを作るための関数
 * make\_section\_from\_text(pd, pt, a\_num, text, par=None, idx=-1):
 	- 説明 : 文字列と, 日付, ターン数, 主語のID（大抵文字列内では省略されるので必要）を使ってSectionを生成する. 日付などのデータはdiff\_dataから得ることになるだろう. 
@@ -100,33 +101,35 @@ Agent[00] BECAUSE agent\[00\] () at Day[00] on Turn[00]
 
 
 <br>
+
 ### 具体的な使用例
 Jupyter Notebookが使えるなら, Test.ipynbにもいくつかメソッド使用例が示してある. 
 
 #### diff\_dataのtype=talkの行からSectionクラスを生成
-```
-talk_data = diff\_data.query('type = "talk"')  # talkの行のみ抽出
+```python
+talk_data = diff_data.query('type = "talk"')  # talkの行のみ抽出
 
 # make_section_from_text関数を使って, Section化する.   
 sec = make_section_from_text(talk_data.day[0], talk_data.turn[0], talk_data.agent[0], talk_data.text[0])
 ```
 
 #### Sectionから特定の演算子を持つSectionを検索して取得 & 表示
-```
+```python
 sec = make_section_from_text(1,1,2,'BECAUSE (Agent[01] DIVINED Agent[03] WEREWOLF) (VOTE Agent[03])')
 sections = sec.get_sec_all(op='VOTE')
 print(sections[0].get_sec_str())  # Agent[02] VOTE agent[03] () at Day[01] on Turn[01]
 ```
 
-#### 'REQUEST'を親に持たない'VOTE'文のみ検索
-```
+#### REQUEST文を親に持たないVOTE文のみ検索
+```python
 text = 'BECAUSE (Agent[02] VOTED Agent[01]) (AND (Agent[01] VOTE Agent[02]) (REQUEST ANY (VOTE Agent[02])))'
 sec = make_section_from_text(2,1,1,text)
+# voteにREQUESTを親に持たないVOTE文のみを入れる
 vote = [s for s in sec.get_sec_all(op='VOTE') if s.get_parent('REQUEST') == None]
 ```
 
 #### 'BECAUSE'の第1文に連なるSectionかどうかを判定. 
-```
+```python
 text = 'BECAUSE (Agent[03] DIVINED Agent[02] WEREWOLF) (AND (Agent[01] VOTE Agent[02]) (REQUEST ANY (VOTE Agent[02])))'
 sec = make_section_from_text(2,1,1,text)
 voted = sec.get_sec_all(op='DIVINED')
