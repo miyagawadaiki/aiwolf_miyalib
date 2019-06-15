@@ -5,7 +5,7 @@
 class Section(object):
     def __init__(self, pub_day=-2, pub_turn=-2, occ_day=-2, \
                     op='', sub_id=0, tar_id=0, comp='', \
-                    sec_list=[], parent=None, index=0):
+                    sec_list=[], parent=None, index=-1):
 
         self.pub_day = pub_day      # 公表された日
         self.pub_turn = pub_turn    # 公表されたターン数
@@ -29,16 +29,25 @@ class Section(object):
         for sec in self.sec_list:
             s += sec.get_sec_str(num+1)
 
-        return s
+        return s if num != 0 else s[:-1]
 
 
-    def get_sec_all(self, operator):
+    def get_sec_str_p(self, num = 0):
+        s = '    ' * num + 'Agent[{0:02d}] {1} agent[{2:02d}] ({3}) at Day[{4:02d}] on Turn[{5:02d}] (parent.op={6}, index={7})\n'.format( \
+                self.sub_id, self.op, self.tar_id, self.comp, self.pub_day, self.pub_turn, self.parent.op if self.parent != None else None, self.index)
+        for sec in self.sec_list:
+            s += sec.get_sec_str_p(num+1)
+
+        return s if num != 0 else s[:-1]
+
+
+    def get_sec_all(self, op=None):
         ret = []
-        if self.op == operator:
+        if self.op == op or op == None:
             ret.append(self)
 
         for sec in self.sec_list:
-            ret.extend(sec.get_sec_all(operator))
+            ret.extend(sec.get_sec_all(op))
 
         return ret
 
@@ -48,8 +57,14 @@ class Section(object):
 
 
     # 親となるSectionを入手
-    def get_parent(self):
-        return self.parent
+    def get_parent(self, op=None):
+        if op == None or self.parent == None:
+            return self.parent
+
+        else:
+            if self.parent.op == op:
+                return self.parent
+            return self.parent.get_parent(op)
 
 
     # 親がいるかどうか
@@ -59,18 +74,26 @@ class Section(object):
 
     # 親から見て何番目のサブSectionなのかを返す
     # BECAUSEの原因文か結果文かの判定などに使える
-    def get_arg_num(self):
-        return self.index
+    def get_arg_num(self, op=None):
+        if op==None:
+            return self.index
+        else:
+            if self.parent == None:
+                return -1
+            elif self.parent.op == op:
+                return self.index
+            else:
+                return self.parent.get_arg_num(op)
 
 
     # operatorが含まれているかを判定
-    def contains(self, operator):
-        if self.op == operator:
+    def contains(self, op):
+        if self.op == op:
             return True
 
         b = False
         for sec in self.sec_list:
-            b = b or sec.contains(operator)
+            b = b or sec.contains(op)
 
         return b
 
@@ -101,8 +124,9 @@ class Section(object):
 #
 # pd: 日付, pt: ターン, a_num: 主語となるエージェント番号 (大抵diff_dataの方にしかない) 
 # text: Section化したい文字列. 文頭と文末のカッコは事前にのけておかないといけない
-def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
+def make_section_from_text(pd, pt, a_num, text, par=None, idx=-1):
     # print(text)
+    text = text.strip()
 
     ret_sec = Section()
     
@@ -115,9 +139,9 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
 
     if head[:3] == 'ANY' or head[:2] == 'Ag':
         if head[:2] == 'AN':
-            pd = -1
+            a_num = -1
         elif head[:2] == 'Ag':
-            pd = int(head[6:8])
+            a_num = int(head[6:8])
 
         content = rest.split(' ', 1)
         head = content[0]
@@ -142,8 +166,13 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
         # 簡単な構文の場合, 残りをスペースで区切って, 情報を得れば良い
 
         words = rest.split(" ")
+        n = 0
+        if words[0] == 'ANY':
+            n = -1
+        else:
+            n = int(words[0][6:8])
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
-                        op='COMINGOUT', sub_id=a_num, tar_id=a_num, comp=words[1], \
+                        op='COMINGOUT', sub_id=a_num, tar_id=n, comp=words[1], \
                         sec_list=[], parent=par, index=idx)
 
     elif head == 'DIVINATION':
@@ -193,33 +222,58 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
     # 2.3
     elif head == 'DIVINED':
         words = rest.split(" ")
+        n = 0
+        if words[0] == 'ANY':
+            n = -1
+        else:
+            n = int(words[0][6:8])
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
-                        op='DIVINED', sub_id=a_num, tar_id=int(words[0][6:8]), comp=words[1], \
+                        op='DIVINED', sub_id=a_num, tar_id=n, comp=words[1], \
                         sec_list=[], parent=par, index=idx)
 
     elif head == 'IDENTIFIED':
         words = rest.split(" ")
+        n = 0
+        if words[0] == 'ANY':
+            n = -1
+        else:
+            n = int(words[0][6:8])
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
-                        op='IDENTIFIED', sub_id=a_num, tar_id=int(words[0][6:8]), \
+                        op='IDENTIFIED', sub_id=a_num, tar_id=n, \
                         comp=words[1], \
                         sec_list=[], parent=par, index=idx)
 
     elif head == 'GUARDED':
         words = rest.split(" ")
+        n = 0
+        if words[0] == 'ANY':
+            n = -1
+        else:
+            n = int(words[0][6:8])
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
-                        op='GUARDED', sub_id=a_num, tar_id=int(words[0][6:8]), comp='', \
+                        op='GUARDED', sub_id=a_num, tar_id=n, comp='', \
                         sec_list=[], parent=par, index=idx)
         
     elif head == 'VOTED':
         words = rest.split(" ")
+        n = 0
+        if words[0] == 'ANY':
+            n = -1
+        else:
+            n = int(words[0][6:8])
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
-                        op='VOTED', sub_id=a_num, tar_id=int(words[0][6:8]), comp='', \
+                        op='VOTED', sub_id=a_num, tar_id=n, comp='', \
                         sec_list=[], parent=par, index=idx)
 
     elif head == 'ATTACKED':
         words = rest.split(" ")
+        n = 0
+        if words[0] == 'ANY':
+            n = -1
+        else:
+            n = int(words[0][6:8])
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
-                        op='ATTACKED', sub_id=a_num, tar_id=int(words[0][6:8]), comp='', \
+                        op='ATTACKED', sub_id=a_num, tar_id=n, comp='', \
                         sec_list=[], parent=par, index=idx)
 
     
@@ -262,10 +316,12 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
             tn = int(w[0][6:8])
 
         nobl = split_blancket(w[1])
-        tmp = make_section_from_text(pd, pt, a_num, nobl[0], ret_sec)
+        tmp = make_section_from_text(pd, pt, tn, nobl[0], ret_sec, 0)
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
                         op='REQUEST', sub_id=a_num, tar_id=tn, \
                         sec_list=[tmp], parent=par, index=idx)
+        ret_sec.sec_list[0].parent = ret_sec
+        
 
     elif head == 'INQUIRE':
         w = rest.split(" ", 1)
@@ -276,10 +332,11 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
             tn = int(w[0][6:8])
 
         nobl = split_blancket(w[1])
-        tmp = make_section_from_text(pd, pt, a_num, nobl[0], ret_sec)
+        tmp = make_section_from_text(pd, pt, tn, nobl[0], ret_sec, 0)
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
                         op='INQUIRE', sub_id=a_num, tar_id=tn, \
                         sec_list=[tmp], parent=par, index=idx)
+        ret_sec.sec_list[0].parent = ret_sec
 
     # 3.2
     elif head == 'BECAUSE':
@@ -293,18 +350,22 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
         #for sec in sections:
         #    sentences.extend(sec.sen_list)
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='BECAUSE', \
                         sec_list=sections.copy(), parent=par, index=idx)
+        ret_sec.sec_list[0].parent = ret_sec
 
     # 3.3 
     elif head == 'DAY':
         w = rest.split(" ", 1)
         day = int(w[0])
         nobl = split_blancket(w[1])
-        tmp = make_section_from_text(pd, pt, a_num, nobl[0], ret_sec)
+        tmp = make_section_from_text(pd, pt, a_num, nobl[0], ret_sec, 0)
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=day, \
+                        sub_id=a_num, \
                         op='DAY', \
                         sec_list=[tmp], parent=par, index=idx)
+        ret_sec.sec_list[0].parent = ret_sec
         for sec in ret_sec.sec_list:
             sec.occ_day = day
 
@@ -313,45 +374,48 @@ def make_section_from_text(pd, pt, a_num, text, par=None, idx=0):
         tmp = split_blancket(rest)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='NOT', \
                         sec_list=sections.copy(), parent=par, index=idx)
+        ret_sec.sec_list[0].parent = ret_sec
 
     elif head == 'AND':
         tmp = split_blancket(rest)
         # print(tmp)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='AND', \
                         sec_list=sections.copy(), parent=par, index=idx)
+        for sec in ret_sec.sec_list:
+            sec.parent = ret_sec
 
     elif head == 'OR':
         tmp = split_blancket(rest)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='OR', \
                         sec_list=sections.copy(), parent=par, index=idx)
+        for sec in ret_sec.sec_list:
+            sec.parent = ret_sec
 
     elif head == 'XOR':
         tmp = split_blancket(rest)
         sections = [make_section_from_text(pd, pt, a_num, tmp[i], ret_sec, i) for i in range(len(tmp))]
         ret_sec = Section(pub_day=pd, pub_turn=pt, occ_day=pd, \
+                        sub_id=a_num, \
                         op='XOR', \
                         sec_list=sections.copy(), parent=par, index=idx)
+        for sec in ret_sec.sec_list:
+            sec.parent = ret_sec
 
-
-    elif head == 'ANY':
-        w = rest.split(" ", 1)
-        day = 0
-        ret_sec = make_section_from_text(pd, pt, a_num, w[1], ret_sec)
-        ret_sec.sub_id = -1
-
-
-    else:
+    else :
         # print('error')
         return Section()
 
     # このprint文により, どうSection化されたかが表示できる
-    # print(ret_sec.get_sec_str(0))
+    # print(ret_sec.get_sec_str())
     return ret_sec
 
 
